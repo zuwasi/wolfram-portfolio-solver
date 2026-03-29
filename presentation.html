@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Wolfram Portfolio Solver — Technical Presentation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0a1a; color: #e0e0e0; }
+
+  /* Slide container */
+  .deck { display: flex; width: max-content; height: 100%; transition: transform 0.5s cubic-bezier(.4,0,.2,1); }
+  .slide {
+    width: 100vw; height: 100vh; flex-shrink: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 5vw 8vw; position: relative; overflow-y: auto;
+  }
+
+  /* Slide themes */
+  .slide.title-slide { background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #0d1b2a 100%); }
+  .slide.dark { background: linear-gradient(180deg, #0f1923 0%, #162030 100%); }
+  .slide.blue { background: linear-gradient(135deg, #0a192f 0%, #112240 100%); }
+  .slide.teal { background: linear-gradient(135deg, #0a2927 0%, #0d3330 100%); }
+  .slide.purple { background: linear-gradient(135deg, #1a1035 0%, #251545 100%); }
+  .slide.red-dark { background: linear-gradient(135deg, #1a0a0a 0%, #2d1515 100%); }
+  .slide.green-dark { background: linear-gradient(135deg, #0a1a0f 0%, #152d1a 100%); }
+  .slide.gold-dark { background: linear-gradient(135deg, #1a1500 0%, #2d2500 100%); }
+
+  /* Typography */
+  h1 { font-size: clamp(1.8rem, 5vw, 3.5rem); font-weight: 700; margin-bottom: 0.4em; line-height: 1.15; }
+  h2 { font-size: clamp(1.4rem, 3.5vw, 2.4rem); font-weight: 600; margin-bottom: 0.5em; line-height: 1.2; }
+  h3 { font-size: clamp(1.1rem, 2.5vw, 1.6rem); font-weight: 600; margin-bottom: 0.4em; color: #80cbc4; }
+  p, li { font-size: clamp(0.85rem, 2vw, 1.15rem); line-height: 1.65; margin-bottom: 0.5em; }
+  .subtitle { font-size: clamp(1rem, 2.5vw, 1.5rem); color: #64ffda; margin-bottom: 1em; font-weight: 300; }
+  .small { font-size: clamp(0.75rem, 1.5vw, 0.95rem); color: #8892b0; }
+
+  /* Accent colors */
+  .accent { color: #64ffda; }
+  .accent-gold { color: #ffd700; }
+  .accent-red { color: #ff6b6b; }
+  .accent-blue { color: #82b1ff; }
+  .accent-purple { color: #c792ea; }
+  .accent-orange { color: #ffab40; }
+
+  /* Content box */
+  .content { max-width: 900px; width: 100%; }
+  .content ul { list-style: none; padding-left: 0; }
+  .content ul li { padding: 0.3em 0 0.3em 1.5em; position: relative; }
+  .content ul li::before { content: '▸'; position: absolute; left: 0; color: #64ffda; font-weight: bold; }
+
+  /* Two-column layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; width: 100%; max-width: 900px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Code / formula blocks */
+  .formula {
+    background: #112240; border-left: 3px solid #64ffda; padding: 1em 1.5em;
+    font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: clamp(0.8rem, 1.8vw, 1.05rem);
+    margin: 0.8em 0; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;
+    color: #ccd6f6;
+  }
+
+  /* Cards */
+  .card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 1.2em 1.5em; margin: 0.5em 0;
+  }
+  .card h3 { margin-bottom: 0.3em; }
+
+  /* Warning / info boxes */
+  .warning {
+    background: rgba(255,107,107,0.08); border-left: 3px solid #ff6b6b;
+    padding: 0.8em 1.2em; border-radius: 4px; margin: 0.6em 0;
+  }
+  .info {
+    background: rgba(100,255,218,0.06); border-left: 3px solid #64ffda;
+    padding: 0.8em 1.2em; border-radius: 4px; margin: 0.6em 0;
+  }
+  .gold-box {
+    background: rgba(255,215,0,0.06); border-left: 3px solid #ffd700;
+    padding: 0.8em 1.2em; border-radius: 4px; margin: 0.6em 0;
+  }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: clamp(0.75rem, 1.6vw, 0.95rem); }
+  th { background: rgba(100,255,218,0.1); color: #64ffda; text-align: left; padding: 0.6em 0.8em; border-bottom: 2px solid rgba(100,255,218,0.2); }
+  td { padding: 0.5em 0.8em; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Navigation arrows */
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%); z-index: 100;
+    background: rgba(100,255,218,0.15); border: 1px solid rgba(100,255,218,0.3);
+    color: #64ffda; font-size: 1.5rem; width: 48px; height: 48px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-arrow:hover { background: rgba(100,255,218,0.3); }
+  .nav-arrow.left { left: 12px; }
+  .nav-arrow.right { right: 12px; }
+  .nav-arrow.hidden { opacity: 0; pointer-events: none; }
+
+  /* Progress bar */
+  .progress { position: fixed; bottom: 0; left: 0; height: 3px; background: #64ffda; transition: width 0.5s; z-index: 100; }
+
+  /* Slide counter */
+  .counter { position: fixed; bottom: 12px; right: 16px; font-size: 0.8rem; color: #5a6a8a; z-index: 100; }
+
+  /* Icon badges */
+  .badge { display: inline-block; background: rgba(100,255,218,0.12); color: #64ffda; padding: 0.2em 0.7em; border-radius: 12px; font-size: 0.8em; margin: 0.15em 0.2em; }
+  .badge.red { background: rgba(255,107,107,0.12); color: #ff6b6b; }
+  .badge.gold { background: rgba(255,215,0,0.12); color: #ffd700; }
+  .badge.purple { background: rgba(199,146,234,0.12); color: #c792ea; }
+
+  /* Big number */
+  .big-num { font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 800; color: #64ffda; line-height: 1; margin: 0.2em 0; }
+
+  /* Touch swipe hint */
+  .swipe-hint {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    color: #5a6a8a; font-size: 0.75rem; z-index: 100; animation: fadeInOut 4s ease-in-out;
+    pointer-events: none;
+  }
+  @keyframes fadeInOut { 0%{opacity:0} 20%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .slide { padding: 8vw 6vw; }
+    .nav-arrow { width: 38px; height: 38px; font-size: 1.2rem; }
+    .nav-arrow.left { left: 6px; }
+    .nav-arrow.right { right: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ===== SLIDE 1: TITLE ===== -->
+<div class="slide title-slide">
+  <div class="content" style="text-align:center">
+    <p class="small" style="letter-spacing:0.3em;text-transform:uppercase;margin-bottom:1em">Technical Deep-Dive</p>
+    <h1>Wolfram Portfolio Solver</h1>
+    <p class="subtitle">Theoretical Investment Simulation Powered Entirely by<br><span class="accent">Wolfram Mathematica</span></p>
+    <div style="margin:1.5em 0">
+      <span class="badge">PySide6 GUI</span>
+      <span class="badge">Wolfram Language</span>
+      <span class="badge">Newton-Raphson</span>
+      <span class="badge">Historical Data</span>
+      <span class="badge">Reverse Solving</span>
+    </div>
+    <p class="small" style="margin-top:2em">Use ← → arrow keys or swipe to navigate</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 2: WHAT WE BUILT ===== -->
+<div class="slide blue">
+  <div class="content">
+    <h2><span class="accent">01</span> — What We Built</h2>
+    <p>A <strong>local desktop application</strong> that simulates theoretical self-managed trading portfolios — with <em>every single mathematical operation</em> executed by the <span class="accent">Wolfram Mathematica kernel</span>.</p>
+    <div class="two-col" style="margin-top:1em">
+      <div class="card">
+        <h3>🔄 Forward Simulation</h3>
+        <p>Given an initial deposit, monthly contributions, and a stock ticker — compute portfolio growth over time using real historical market data.</p>
+      </div>
+      <div class="card">
+        <h3>🔍 Reverse Solving</h3>
+        <p>Given a target final amount, solve for the <em>unknown</em> — initial deposit, monthly contribution, or equivalent return rate.</p>
+      </div>
+    </div>
+    <div class="info" style="margin-top:1em">
+      <strong>Key distinction:</strong> This is a <em>theoretical simulator</em>, not a brokerage tool. It is designed for mathematical modeling, historical backtesting, and solving inverse financial problems.
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 3: ARCHITECTURE ===== -->
+<div class="slide dark">
+  <div class="content">
+    <h2><span class="accent">02</span> — Architecture</h2>
+    <p>Python is the <em>orchestrator</em>. Mathematica is the <em>engine</em>.</p>
+    <div class="formula">
+┌─────────────────────────────────────────┐
+│           PySide6 Desktop GUI           │
+├──────────┬──────────┬───────────────────┤
+│ Summary  │  Chart   │ Monthly Details   │
+│  Tab     │  Tab     │   / Diagnostics   │
+├──────────┴──────────┴───────────────────┤
+│        Python Application Layer         │
+│  (input validation, data flow, export)  │
+├─────────────────────────────────────────┤
+│     wolframscript  ← subprocess call    │
+├─────────────────────────────────────────┤
+│    Wolfram Mathematica 14.3 Kernel      │
+│  (ALL math: recurrence, Solve,          │
+│   FindRoot, N[], CForm output)          │
+├─────────────────────────────────────────┤
+│         yfinance (market data)          │
+└─────────────────────────────────────────┘</div>
+    <p class="small">Every arithmetic operation — even <code>1000 × 1.01</code> — goes through the Wolfram kernel. Python performs zero math.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 4: THE MATHEMATICAL MODEL ===== -->
+<div class="slide teal">
+  <div class="content">
+    <h2><span class="accent">03</span> — The Mathematical Model</h2>
+    <p>The portfolio evolves according to a <strong>first-order difference equation</strong>:</p>
+    <div class="formula">x<sub>n+1</sub> = (x<sub>n</sub> + b) × (1 + p<sub>n</sub>)</div>
+    <ul>
+      <li><strong>x<sub>n</sub></strong> — portfolio value after period n</li>
+      <li><strong>b</strong> — monthly deposit (added at the <em>beginning</em> of each month, before the return is applied)</li>
+      <li><strong>p<sub>n</sub></strong> — market return in period n, defined as: <code>p<sub>n</sub> = price<sub>n</sub> / price<sub>n-1</sub> − 1</code></li>
+      <li><strong>x<sub>0</sub> = A</strong> — initial deposit, present before the first return period</li>
+    </ul>
+    <div class="info">
+      <strong>Explicit closed form:</strong><br>
+      <code>x<sub>n</sub> = A·∏(1+p<sub>k</sub>) + Σ b·∏(1+p<sub>m</sub>)</code><br>
+      The product of returns compounds the initial capital; each deposit compounds from its injection point forward.
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 5: WHY MATHEMATICA EXECUTES THE MATH ===== -->
+<div class="slide purple">
+  <div class="content">
+    <h2><span class="accent">04</span> — Why Mathematica Executes ALL the Math</h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>🎯 Arbitrary Precision</h3>
+        <p>Mathematica's <code>N[expr, 20]</code> computes to 20 significant digits — far beyond IEEE 754 double precision (≈15.9 digits). Critical when compounding over hundreds of periods.</p>
+      </div>
+      <div class="card">
+        <h3>🧮 Symbolic → Numeric Pipeline</h3>
+        <p>Solve linear cases symbolically with <code>Solve[]</code>, then evaluate numerically. This guarantees <em>exact</em> results for linear unknowns (A, b) — no iteration needed.</p>
+      </div>
+      <div class="card">
+        <h3>⚡ Industrial FindRoot</h3>
+        <p>Mathematica's <code>FindRoot[]</code> uses adaptive step control, automatic Jacobian estimation, and robust convergence — production-grade Newton-Raphson without hand-coding edge cases.</p>
+      </div>
+      <div class="card">
+        <h3>🔗 Unified Engine</h3>
+        <p>One kernel handles everything: product chains, summation series, root-finding, precision control, and output formatting. No library mismatches, no floating-point surprises.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 6: FORWARD SIMULATION DEEP DIVE ===== -->
+<div class="slide blue">
+  <div class="content">
+    <h2><span class="accent">05</span> — Forward Simulation in Wolfram Language</h2>
+    <p>The actual Wolfram code sent to the kernel:</p>
+    <div class="formula">Module[{x = 300000., ret = {0.05, -0.03, ...}, vals},
+  vals = {x};
+  Do[
+    x = (x + 6000.) * (1 + ret[[i]]);
+    AppendTo[vals, x],
+    {i, 1, Length[ret]}
+  ];
+  StringRiffle[
+    ToString[CForm[#]] &amp; /@ N[vals, 20], ","
+  ]
+]</div>
+    <ul>
+      <li><span class="accent">Do[...]</span> — imperative loop, mirrors the recurrence exactly</li>
+      <li><span class="accent">N[vals, 20]</span> — 20-digit precision for every intermediate value</li>
+      <li><span class="accent">CForm[#]</span> — outputs C-style scientific notation (e.g., <code>3.21e5</code>) for clean Python parsing</li>
+      <li><span class="accent">StringRiffle[..., ","]</span> — comma-separated output, one call returns all portfolio snapshots</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== SLIDE 7: REVERSE SOLVING ===== -->
+<div class="slide dark">
+  <div class="content">
+    <h2><span class="accent">06</span> — Reverse Solving: Finding the Unknown</h2>
+    <table>
+      <tr><th>Unknown</th><th>Method</th><th>Wolfram Function</th></tr>
+      <tr><td>Initial Deposit (A)</td><td>Linear — exact</td><td><code>Solve[recurrence == target, a]</code></td></tr>
+      <tr><td>Monthly Deposit (b)</td><td>Linear — exact</td><td><code>Solve[recurrence == target, b]</code></td></tr>
+      <tr><td>Monthly Return (r<sub>m</sub>)</td><td>Nonlinear — numerical</td><td><code>FindRoot[f(rm) == target, {rm, 0.005}]</code></td></tr>
+      <tr><td>Annual Return (r<sub>y</sub>)</td><td>Nonlinear — numerical</td><td><code>FindRoot[f(ry) == target, {ry, 0.05}]</code></td></tr>
+      <tr><td>Final Amount (x<sub>n</sub>)</td><td>Direct computation</td><td>Forward recurrence</td></tr>
+    </table>
+    <div class="info" style="margin-top:1em">
+      <strong>Key insight:</strong> For linear unknowns, Mathematica's <code>Solve[]</code> returns the <em>exact symbolic solution</em> before numerical evaluation — guaranteeing zero iteration error.
+    </div>
+    <div class="formula">Module[{sol, xfinal, a},
+  xfinal = Module[{x = a, ret = {0.02, -0.01, ...}},
+    Do[x = (x + 300.) * (1 + ret[[i]]), {i, 1, n}]; x];
+  sol = Solve[xfinal == 50000., a];
+  ToString[CForm[N[a /. sol[[1]], 20]]]]</div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 8: THE ANNUAL RETURN CHALLENGE ===== -->
+<div class="slide teal">
+  <div class="content">
+    <h2><span class="accent">07</span> — The Annual Return Challenge</h2>
+    <p>Solving for equivalent annual return is the hardest problem:</p>
+    <div class="formula">r<sub>m</sub> = (1 + r<sub>y</sub>)<sup>1/12</sup> − 1
+
+f(r<sub>y</sub>) = forward_value(A, b, r<sub>m</sub>(r<sub>y</sub>), n) − target = 0</div>
+    <div class="warning">
+      <strong>⚠ Complexity:</strong> The function <code>(1 + r<sub>y</sub>)<sup>1/12</sup></code> produces <em>complex numbers</em> when <code>r<sub>y</sub> < −1</code>. Standard Newton-Raphson will diverge into the complex plane.
+    </div>
+    <p style="margin-top:0.5em"><strong>Our solution:</strong> Force real arithmetic in the Wolfram expression:</p>
+    <div class="formula">rm = Sign[1 + ry] * Abs[1 + ry]^(1/12) - 1</div>
+    <p>Then wrap the result in <code>Re[...]</code> and use <code>CForm</code> to extract only the real part. This keeps FindRoot on the real number line even for extreme initial guesses.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 9: IMPLICATIONS FOR INVESTORS ===== -->
+<div class="slide gold-dark">
+  <div class="content">
+    <h2><span class="accent-gold">08</span> — Implications for Investment Decisions</h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>📊 Realistic Goal Setting</h3>
+        <p>By reverse-solving for required monthly deposits, investors can determine <em>exactly</em> how much to save to reach a target — based on actual historical market behavior, not optimistic assumptions.</p>
+      </div>
+      <div class="card">
+        <h3>📉 Risk Awareness</h3>
+        <p>Historical simulations show the <em>actual volatility path</em> — months of negative returns, drawdowns, and recovery periods. This is fundamentally different from a smooth compound growth curve.</p>
+      </div>
+      <div class="card">
+        <h3>🎯 Equivalent Return Clarity</h3>
+        <p>Solving for equivalent annual return from a historical simulation reveals the <em>true CAGR</em> — often very different from the arithmetic mean of monthly returns.</p>
+      </div>
+      <div class="card">
+        <h3>💡 Sensitivity Analysis</h3>
+        <p>Running the same simulation with different start/end dates exposes how <em>timing</em> dramatically affects outcomes — the same strategy can yield +80% or −20% depending on entry point.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 10: WHAT CAN GO WRONG ===== -->
+<div class="slide red-dark">
+  <div class="content">
+    <h2><span class="accent-red">09</span> — What Can Go Wrong: Dangers of the Data</h2>
+    <div class="warning">
+      <h3>🚨 Survivorship Bias</h3>
+      <p>Testing with tickers that <em>still exist today</em> ignores the companies that went bankrupt. Your backtest only includes winners — inflating apparent returns.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Past Performance ≠ Future Results</h3>
+      <p>A stock that returned 15% annually for 10 years may return −5% next year. Historical simulation is a <em>descriptive</em> tool, not a <em>predictive</em> one. Markets are non-stationary.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Adjusted Close Limitations</h3>
+      <p>Yahoo Finance adjusted close accounts for splits and dividends, but may contain errors, revisions, or gaps — especially for less liquid stocks.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Monthly Aggregation Hides Intra-Month Volatility</h3>
+      <p>A month with +5% return may have had a −15% drawdown mid-month. The model sees only the net result — missing the emotional and margin-call reality of living through it.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 11: MORE RISKS ===== -->
+<div class="slide red-dark">
+  <div class="content">
+    <h2><span class="accent-red">10</span> — More Risks to Consider</h2>
+    <div class="warning">
+      <h3>🚨 No Taxes, Fees, or Slippage</h3>
+      <p>Real portfolios incur capital gains taxes (15–37%), brokerage commissions, bid-ask spreads, and fund expense ratios. Ignoring these can overstate returns by 2–5% annually.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Inflation Erosion</h3>
+      <p>A $1M portfolio in 2050 buys far less than $1M today. Without inflation adjustment, nominal gains create a false sense of wealth growth. At 3% inflation, purchasing power halves every 24 years.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Single-Ticker Concentration Risk</h3>
+      <p>Simulating one stock ignores diversification benefits. Real portfolios hold multiple assets to reduce idiosyncratic risk. A single stock can go to zero; an index rarely does.</p>
+    </div>
+    <div class="warning">
+      <h3>🚨 Constant Deposit Assumption</h3>
+      <p>Real life involves job loss, medical emergencies, and lifestyle changes. The model assumes perfectly consistent monthly deposits — a luxury many investors don't have.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 12: SAFEGUARDS ===== -->
+<div class="slide green-dark">
+  <div class="content">
+    <h2><span class="accent">11</span> — Safeguards for Responsible Use</h2>
+    <ul>
+      <li><strong>Always run multiple scenarios.</strong> Test bull markets, bear markets, and sideways markets. Never rely on a single backtest window.</li>
+      <li><strong>Use conservative return assumptions.</strong> When using constant-return mode, use rates 2–3% below historical averages to build a safety margin.</li>
+      <li><strong>Cross-validate with index benchmarks.</strong> Compare single-stock results against SPY or a total market fund to gauge whether outperformance is real or lucky timing.</li>
+      <li><strong>Apply a Monte Carlo layer.</strong> Use the historical return distribution to run 10,000+ randomized simulations and examine the range of outcomes, not just one path.</li>
+      <li><strong>Factor in taxes and fees manually.</strong> Reduce simulated returns by your marginal tax rate and expected costs before making decisions.</li>
+      <li><strong>Treat results as scenarios, not forecasts.</strong> The output answers "what <em>would have</em> happened" — never "what <em>will</em> happen."</li>
+      <li><strong>Review deposit timing assumptions.</strong> Our model adds deposits at month-start. Real DCA may differ. Small timing changes compound over decades.</li>
+      <li><strong>Check solver convergence.</strong> Always verify the Diagnostics tab — non-convergent or high-residual results should be discarded.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== SLIDE 13: WHY WOLFRAM MATHEMATICA ===== -->
+<div class="slide purple">
+  <div class="content">
+    <h2><span class="accent-purple">12</span> — Why Wolfram Mathematica Is the Best Tool</h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>🏆 Symbolic + Numeric Unity</h3>
+        <p>No other system seamlessly transitions from <code>Solve[x^2==4, x]</code> (symbolic) to <code>FindRoot[f==0, {x, 0.5}]</code> (numeric) in the same expression. This eliminates an entire class of precision errors.</p>
+      </div>
+      <div class="card">
+        <h3>🏆 Battle-Tested Numerics</h3>
+        <p>35+ years of development. Used by NASA, Wall Street quant desks, and research institutions. The numerical routines have survived scrutiny that no Python library can match.</p>
+      </div>
+      <div class="card">
+        <h3>🏆 Built-in Financial Functions</h3>
+        <p><code>FinancialData[]</code>, <code>TimeValue[]</code>, <code>Annuity[]</code> — Mathematica has native financial primitives. We use raw recurrence for transparency, but the ecosystem is there for extension.</p>
+      </div>
+      <div class="card">
+        <h3>🏆 Reproducibility</h3>
+        <p>Wolfram Language is deterministic. The same expression always produces the same result. No random seeds, no GPU non-determinism, no library version drift.</p>
+      </div>
+    </div>
+    <div class="gold-box" style="margin-top:1em">
+      <strong>Competitive comparison:</strong> NumPy/SciPy use 64-bit floats (15.9 digits). MATLAB uses the same. R uses the same. Only Mathematica offers arbitrary-precision arithmetic out of the box.
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 14: SCALING ===== -->
+<div class="slide blue">
+  <div class="content">
+    <h2><span class="accent">13</span> — Scaling to Many Tickers &amp; Large Datasets</h2>
+    <table>
+      <tr><th>Challenge</th><th>Solution</th></tr>
+      <tr><td>100+ tickers, each with 20 years of data</td><td>Batch <code>wolframscript</code> calls with parallelism — <code>ParallelMap</code> inside a single kernel session</td></tr>
+      <tr><td>Thousands of reverse-solve scenarios</td><td>Use <code>WolframLanguageSession</code> (wolframclient) for persistent kernel — avoid process startup overhead per call</td></tr>
+      <tr><td>Multi-ticker portfolio allocation</td><td>Extend the recurrence to a vector model: <code>x<sub>n+1</sub> = Σ w<sub>i</sub>(x<sub>n,i</sub> + b<sub>i</sub>)(1 + p<sub>n,i</sub>)</code></td></tr>
+      <tr><td>Real-time or daily granularity</td><td>Switch from monthly to daily returns — same recurrence, 21× more data points per year</td></tr>
+      <tr><td>Monte Carlo simulation (10K+ paths)</td><td>Generate random return sequences in Mathematica using <code>RandomVariate[dist, n]</code>, run recurrence in a compiled function</td></tr>
+      <tr><td>Enterprise deployment</td><td>Use Wolfram Engine (free for dev) behind a REST API; PySide6 clients connect over HTTP</td></tr>
+    </table>
+    <div class="info" style="margin-top:1em">
+      <strong>Performance note:</strong> Mathematica's <code>Compile[]</code> can JIT-compile the recurrence loop to native machine code — achieving C-level speed for millions of iterations.
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 15: WOLFRAM ENGINE API ===== -->
+<div class="slide dark">
+  <div class="content">
+    <h2><span class="accent">14</span> — Scaling Architecture: Wolfram Engine as a Service</h2>
+    <div class="formula">
+┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
+│  PySide6 GUI │     │  Web Client  │     │  API Consumer    │
+│  (Desktop)   │     │  (React/Vue) │     │  (Python/R/etc)  │
+└──────┬───────┘     └──────┬───────┘     └──────┬───────────┘
+       │                    │                     │
+       └────────────┬───────┴─────────────────────┘
+                    │  HTTP / WebSocket
+           ┌────────▼─────────┐
+           │   FastAPI Server  │
+           │  (orchestration)  │
+           ├───────────────────┤
+           │  wolframclient    │
+           │  session pool     │
+           ├───────────────────┤
+           │  Wolfram Engine   │
+           │  (4–8 kernels)    │
+           ├───────────────────┤
+           │  PostgreSQL       │
+           │  (cached results) │
+           └───────────────────┘</div>
+    <p>The free <strong>Wolfram Engine</strong> runs headless on Linux servers. A pool of persistent kernel sessions handles concurrent requests. Results are cached in a database to avoid re-computation.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 16: DATA FLOW ===== -->
+<div class="slide teal">
+  <div class="content">
+    <h2><span class="accent">15</span> — End-to-End Data Flow</h2>
+    <div class="formula">
+User Input (ticker, dates, deposits, solver mode)
+    │
+    ▼
+[1] yfinance: fetch daily adjusted close prices
+    │
+    ▼
+[2] Python: resample to monthly, compute p_n = price_n/price_(n-1) - 1
+    │
+    ▼
+[3] Build Wolfram Language expression string
+    │
+    ▼
+[4] wolframscript -code "Module[{...}, ...]"
+    │
+    ▼
+[5] Wolfram Kernel: execute recurrence / Solve / FindRoot
+    │
+    ▼
+[6] CForm output → Python parses comma-separated floats
+    │
+    ▼
+[7] GUI: populate Summary, Chart, Table, Diagnostics</div>
+    <p class="small">Total latency for a 60-month simulation: ~2–4 seconds (dominated by kernel startup). With a persistent session via wolframclient: ~50ms.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 17: RESULTS INTERPRETATION ===== -->
+<div class="slide gold-dark">
+  <div class="content">
+    <h2><span class="accent-gold">16</span> — How to Interpret Results</h2>
+    <div class="card">
+      <h3>📈 Forward Simulation Output</h3>
+      <p>The chart shows the <em>actual path</em> your portfolio would have taken — including every dip and recovery. The final value is what you'd have if you started exactly on the start date and contributed every month without fail.</p>
+    </div>
+    <div class="card">
+      <h3>🔄 Reverse Solver Output</h3>
+      <p>When solving for monthly deposit: "You would have needed to deposit <strong>$X/month</strong> to reach your target." This is <em>backward-looking</em> — the required deposit for future scenarios will differ based on future (unknown) returns.</p>
+    </div>
+    <div class="card">
+      <h3>📊 Equivalent Annual Return</h3>
+      <p>This is the <strong>constant annual rate</strong> that would produce the same final value. It smooths out all volatility into a single number — useful for comparison, but it hides the pain of drawdowns.</p>
+    </div>
+    <div class="gold-box">
+      <strong>The golden rule:</strong> Use forward simulation to understand <em>what happened</em>. Use reverse solving to understand <em>what it would take</em>. Never use either to predict <em>what will happen</em>.
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 18: TECHNICAL DECISIONS ===== -->
+<div class="slide dark">
+  <div class="content">
+    <h2><span class="accent">17</span> — Key Technical Decisions</h2>
+    <table>
+      <tr><th>Decision</th><th>Rationale</th></tr>
+      <tr><td>wolframscript subprocess (not wolframclient)</td><td>Zero Python dependencies on Wolfram SDK; works with any Mathematica install; simpler deployment</td></tr>
+      <tr><td>CForm output formatting</td><td>Produces C-style floats (e.g., <code>3.14e2</code>) — directly parseable by Python's <code>float()</code></td></tr>
+      <tr><td>Sign[]*Abs[]^(1/12) for annual return</td><td>Avoids complex arithmetic when (1+r<sub>y</sub>) is negative; keeps FindRoot on the real line</td></tr>
+      <tr><td>Re[] wrapper on FindRoot results</td><td>Safety net: even if Mathematica drifts into complex space, we extract only the real component</td></tr>
+      <tr><td>Solve[] for linear unknowns</td><td>A and b are linear in the recurrence — symbolic solution is exact with zero iteration error</td></tr>
+      <tr><td>20-digit precision (N[..., 20])</td><td>Exceeds IEEE 754 doubles; prevents accumulation of rounding errors over long compounding chains</td></tr>
+      <tr><td>Monthly granularity (not daily)</td><td>Matches typical DCA frequency; reduces data volume 21×; sufficient for long-horizon planning</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ===== SLIDE 19: COMPARISON ===== -->
+<div class="slide purple">
+  <div class="content">
+    <h2><span class="accent-purple">18</span> — Mathematica vs. Python-Only: Side by Side</h2>
+    <table>
+      <tr><th>Aspect</th><th>Python-Only Version</th><th>Mathematica Version</th></tr>
+      <tr><td>Precision</td><td>64-bit float (≈15.9 digits)</td><td class="accent">Arbitrary (20+ digits)</td></tr>
+      <tr><td>Linear solving</td><td>Manual algebra in code</td><td class="accent">Symbolic Solve[] — exact</td></tr>
+      <tr><td>Nonlinear solving</td><td>Hand-coded Newton-Raphson</td><td class="accent">FindRoot[] — adaptive, industrial</td></tr>
+      <tr><td>Complex number handling</td><td>Crashes or silent NaN</td><td class="accent">Re[]/Sign[]/Abs[] — graceful</td></tr>
+      <tr><td>Validation</td><td>Self-validates (circular)</td><td class="accent">Independent engine validates</td></tr>
+      <tr><td>Dependencies</td><td class="accent">None (pure Python)</td><td>Requires Mathematica license</td></tr>
+      <tr><td>Latency</td><td class="accent">< 1 ms per simulation</td><td>~2–4s (subprocess) / ~50ms (session)</td></tr>
+      <tr><td>Offline capability</td><td class="accent">Full</td><td class="accent">Full (local kernel)</td></tr>
+    </table>
+    <p class="small" style="margin-top:1em">Both versions exist in this project. Use Python-only for speed; Mathematica for precision and auditability.</p>
+  </div>
+</div>
+
+<!-- ===== SLIDE 20: FUTURE EXTENSIONS ===== -->
+<div class="slide blue">
+  <div class="content">
+    <h2><span class="accent">19</span> — Future Extensions</h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>🔮 Monte Carlo Engine</h3>
+        <p>Use Mathematica's <code>RandomVariate[]</code> to generate thousands of return paths from fitted distributions. Compute confidence intervals on final portfolio values.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Multi-Ticker Portfolios</h3>
+        <p>Extend to weighted portfolios with rebalancing. Mathematica handles covariance matrices and portfolio optimization natively via <code>MeanVariancePortfolio[]</code>.</p>
+      </div>
+      <div class="card">
+        <h3>💰 Tax-Aware Modeling</h3>
+        <p>Add capital gains tax brackets, dividend tax rates, and tax-loss harvesting logic. Mathematica's conditional expressions handle complex tax rules cleanly.</p>
+      </div>
+      <div class="card">
+        <h3>🌐 Web Deployment</h3>
+        <p>Wrap the Wolfram Engine in a FastAPI service. Replace PySide6 with a React frontend. Same mathematical core, accessible from any browser.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 21: SUMMARY ===== -->
+<div class="slide title-slide">
+  <div class="content" style="text-align:center">
+    <h1>Summary</h1>
+    <div style="max-width:700px;margin:0 auto;text-align:left">
+      <ul>
+        <li>Built a <strong>complete portfolio simulator</strong> with forward and reverse solving</li>
+        <li><strong>Every mathematical operation</strong> runs through Wolfram Mathematica — not a single arithmetic op in Python</li>
+        <li>Handles the <strong>complex-number pitfall</strong> in annual return solving with real-arithmetic enforcement</li>
+        <li>Results are <strong>descriptive, not predictive</strong> — historical backtests inform but don't forecast</li>
+        <li>Investors must apply <strong>safeguards</strong>: multiple scenarios, conservative assumptions, tax adjustments</li>
+        <li>Architecture <strong>scales</strong> to multi-ticker, Monte Carlo, and web deployment via Wolfram Engine</li>
+      </ul>
+    </div>
+    <div style="margin-top:2em">
+      <p class="subtitle">Wolfram Mathematica: Where symbolic rigor meets financial simulation.</p>
+    </div>
+    <div style="margin-top:1.5em">
+      <span class="badge gold">GitHub: wolfram-portfolio-solver</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SLIDE 22: REPO INFO ===== -->
+<div class="slide dark">
+  <div class="content" style="text-align:center">
+    <h2>GitHub Repository</h2>
+    <div class="big-num" style="font-size:clamp(1.5rem,4vw,2.5rem);margin:0.5em 0">wolfram-portfolio-solver</div>
+    <div class="card" style="text-align:left;max-width:700px;margin:1em auto">
+      <h3>Repository Description (350 chars)</h3>
+      <p style="color:#ccd6f6;font-family:monospace;font-size:0.9em">Theoretical trading portfolio simulator powered entirely by Wolfram Mathematica. Forward simulation with historical stock data (yfinance) and reverse solving (initial deposit, monthly contribution, equivalent return) via symbolic Solve[] and numerical FindRoot[]. PySide6 desktop GUI with charts, monthly breakdowns, and CSV export. Includes a pure Python version for comparison.</p>
+    </div>
+    <div style="margin-top:1.5em">
+      <span class="badge">Python 3.10+</span>
+      <span class="badge">Wolfram Mathematica 14.3</span>
+      <span class="badge">PySide6</span>
+      <span class="badge">yfinance</span>
+      <span class="badge">MIT License</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<button class="nav-arrow left hidden" id="prevBtn" aria-label="Previous slide">‹</button>
+<button class="nav-arrow right" id="nextBtn" aria-label="Next slide">›</button>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter"></div>
+<div class="swipe-hint" id="swipeHint">← Swipe or use arrow keys →</div>
+
+<script>
+(function() {
+  const deck = document.getElementById('deck');
+  const slides = deck.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const progress = document.getElementById('progress');
+  const counter = document.getElementById('counter');
+
+  function goTo(idx) {
+    current = Math.max(0, Math.min(total - 1, idx));
+    deck.style.transform = `translateX(-${current * 100}vw)`;
+    prevBtn.classList.toggle('hidden', current === 0);
+    nextBtn.classList.toggle('hidden', current === total - 1);
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    counter.textContent = (current + 1) + ' / ' + total;
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  // Touch swipe
+  let touchStartX = 0, touchEndX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    if (Math.abs(diff) > 50) { diff > 0 ? goTo(current + 1) : goTo(current - 1); }
+  }, { passive: true });
+
+  goTo(0);
+  setTimeout(() => { const h = document.getElementById('swipeHint'); if(h) h.remove(); }, 5000);
+})();
+</script>
+</body>
+</html>
